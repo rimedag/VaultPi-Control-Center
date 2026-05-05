@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %} - NetHunter Wiki{% endblock %}
+{% block meta_refresh %}{% endblock %}
+{% block content %}
+<div class="row between gap">
+  <div>
+    <h2>NetHunter Wiki</h2>
+    <p class="muted">Structured offline reference for NetHunter and regular Kali Linux workflows.</p>
+  </div>
+  {% if selected_article %}
+  <a class="btn btn-secondary" href="{{ url_for('main.nethunter_article', slug=selected_article.slug) }}">Direct Link</a>
+  {% endif %}
+</div>
+
+<div class="knowledge-layout" id="knowledge-center" data-selected-slug="{{ selected_article.slug if selected_article else '' }}">
+  <aside class="knowledge-sidebar">
+    <div class="card knowledge-sticky">
+      <label>
+        Search
+        <input id="knowledge-search" type="search" placeholder="Search titles, tags, controls, commands">
+      </label>
+      <div class="form-grid knowledge-filters">
+        <label>
+          Category
+          <select id="knowledge-category">
+            <option value="">All</option>
+            {% for category in filter_options.categories %}
+            <option value="{{ category }}">{{ category }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>
+          Tag
+          <select id="knowledge-tag">
+            <option value="">All</option>
+            {% for tag in filter_options.tags %}
+            <option value="{{ tag }}">{{ tag }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>
+          Difficulty
+          <select id="knowledge-difficulty">
+            <option value="">All</option>
+            {% for difficulty in filter_options.difficulties %}
+            <option value="{{ difficulty }}">{{ difficulty }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>
+          Platform
+          <select id="knowledge-platform">
+            <option value="all">All</option>
+            <option value="nethunter">NetHunter</option>
+            <option value="kali">Kali Linux</option>
+            <option value="both">Both</option>
+          </select>
+        </label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Article List</h3>
+      <p class="muted small" id="knowledge-count">{{ article_summaries|length }} articles</p>
+      <div class="knowledge-list" id="knowledge-list">
+        {% for article in article_summaries %}
+        <a
+          class="knowledge-list-item {% if selected_article and selected_article.slug == article.slug %}active{% endif %}"
+          href="{{ url_for('main.nethunter_article', slug=article.slug) }}"
+          data-slug="{{ article.slug }}"
+          data-category="{{ article.category }}"
+          data-difficulty="{{ article.difficulty }}"
+          data-platform="{{ article.platform }}"
+          data-tags="{{ article.tags|join('|')|lower }}"
+          data-search="{{ article.searchText }}"
+        >
+          <strong>{{ article.title }}</strong>
+          <span class="muted small">{{ article.category }} - {{ article.difficulty }}</span>
+          <span class="muted small">{{ article.shortDescription }}</span>
+        </a>
+        {% endfor %}
+      </div>
+      <p class="muted small knowledge-empty hidden" id="knowledge-empty">No articles match the current filters.</p>
+    </div>
+
+    <div class="card">
+      <div class="row between">
+        <h3>Favorites</h3>
+        {% if selected_article %}
+        <button class="btn btn-secondary knowledge-favorite-toggle" type="button" data-slug="{{ selected_article.slug }}">Toggle Favorite</button>
+        {% endif %}
+      </div>
+      <div class="knowledge-mini-list" id="knowledge-favorites"></div>
+    </div>
+
+    <div class="card">
+      <h3>Recently Viewed</h3>
+      <div class="knowledge-mini-list" id="knowledge-recents"></div>
+    </div>
+  </aside>
+
+  <section class="knowledge-detail" id="article-detail">
+    {% if selected_article %}
+      {% include "_knowledge_article_detail.html" %}
+    {% else %}
+      <div class="card"><p class="muted">No article selected.</p></div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.KNOWLEDGE_ARTICLES = {{ article_summaries|tojson }};
+</script>
+<script src="{{ url_for('static', filename='knowledge_center.js') }}"></script>
+{% endblock %}

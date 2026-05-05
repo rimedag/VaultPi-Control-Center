@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %} - Web Browser{% endblock %}
+{% block content %}
+<h2>Web Browser</h2>
+
+{% if not w3m_ok %}
+<div class="card">
+  <p><strong>w3m is not installed.</strong></p>
+  <pre class="log-box">sudo apt install w3m</pre>
+  <p class="muted">Install w3m on the Raspberry Pi, then reload this page.</p>
+</div>
+{% endif %}
+
+<div class="card">
+  <form class="form-grid" method="post" action="{{ url_for('main.web_browser_search') }}">
+    <label style="grid-column: 1 / -1;">
+      Search or URL
+      <input name="query" placeholder="search terms or example.com" autocomplete="off" {% if not w3m_ok %}disabled{% endif %}>
+    </label>
+    <div class="row gap" style="grid-column: 1 / -1;">
+      <button class="btn" type="submit" {% if not w3m_ok %}disabled{% endif %}>Search Web</button>
+      <a class="btn btn-secondary" href="{{ url_for('main.web_browser_bookmarks') }}">Bookmarks</a>
+    </div>
+  </form>
+</div>
+
+{% if show_bookmarks %}
+<div class="card">
+  <div class="row between gap">
+    <h3>Bookmarks</h3>
+    <a class="btn btn-secondary" href="{{ url_for('main.web_browser') }}">Back</a>
+  </div>
+  {% for bm in bookmarks %}
+  <form method="post" action="{{ url_for('main.web_browser_bookmark_open') }}" class="row between gap">
+    <input type="hidden" name="url" value="{{ bm.url }}">
+    <span><strong>{{ bm.title }}</strong><br><code class="muted">{{ bm.url }}</code></span>
+    <button class="btn btn-sm" type="submit" {% if not w3m_ok %}disabled{% endif %}>Open</button>
+  </form>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="card">
+  <h3>Terminal Mode</h3>
+  <p class="muted">The full current UI renders this page as a terminal-style text browser. This fallback page launches w3m in the live terminal.</p>
+</div>
+{% endblock %}

@@ -1,0 +1,77 @@
+﻿<!doctype html>
+<html lang="en" data-theme="{{ theme }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ app_name }}{% block title %}{% endblock %}</title>
+  {% block meta_refresh %}
+    {% if request.endpoint in ['main.dashboard', 'main.monitoring', 'main.local_services', 'main.remote_services'] %}
+    <meta http-equiv="refresh" content="{{ refresh_interval }}">
+    {% endif %}
+  {% endblock %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <h1>{{ dashboard_title }}</h1>
+      <p class="muted">{{ hostname_label or metrics.hostname if metrics else '' }}</p>
+    </div>
+    <nav>
+      <a class="{% if request.endpoint == 'main.dashboard' %}active{% endif %}" href="{{ url_for('main.dashboard') }}">Overview</a>
+      {% if module_flags.projects %}
+      <a class="{% if request.endpoint == 'main.projects_list' or request.endpoint == 'main.project_create' or request.endpoint == 'main.project_detail' or request.endpoint == 'main.project_edit' %}active{% endif %}" href="{{ url_for('main.projects_list') }}">Projects</a>
+      {% endif %}
+      {% if module_flags.local_services %}
+      <a class="{% if request.endpoint == 'main.local_services' %}active{% endif %}" href="{{ url_for('main.local_services') }}">Local Services</a>
+      {% endif %}
+      {% if module_flags.remote_services %}
+      <a class="{% if request.endpoint == 'main.remote_services' %}active{% endif %}" href="{{ url_for('main.remote_services') }}">Remote Services</a>
+      <a class="{% if request.endpoint == 'main.monitoring' %}active{% endif %}" href="{{ url_for('main.monitoring') }}">Monitoring</a>
+      {% endif %}
+      {% if module_flags.actions %}
+      <a class="{% if request.endpoint == 'main.actions' or request.endpoint == 'main.gitea_log' or request.endpoint == 'main.gitea_script' %}active{% endif %}" href="{{ url_for('main.actions') }}">Quick Actions</a>
+      <a class="{% if request.endpoint == 'main.terminal_console' %}active{% endif %}" href="{{ url_for('main.terminal_console') }}">Console</a>
+      <a class="{% if request.endpoint == 'main.terminal_live' %}active{% endif %}" href="{{ url_for('main.terminal_live') }}">Terminal</a>
+      <a class="{% if request.endpoint == 'main.restore_playbook' %}active{% endif %}" href="{{ url_for('main.restore_playbook') }}">Restore Playbook</a>
+      {% endif %}
+      <a class="{% if request.endpoint == 'main.nethunter_wiki' or request.endpoint == 'main.nethunter_article' %}active{% endif %}" href="{{ url_for('main.nethunter_wiki') }}">NetHunter Wiki</a>
+      <a class="{% if request.endpoint in ['main.web_browser', 'main.web_browser_bookmarks'] %}active{% endif %}" href="{{ url_for('main.web_browser') }}">Web Browser</a>
+      {% if module_flags.logs %}
+      <a class="{% if request.endpoint == 'main.logs' or request.endpoint == 'main.logs_project' %}active{% endif %}" href="{{ url_for('main.logs') }}">Logs</a>
+      {% endif %}
+      <a class="{% if request.endpoint == 'main.network_page' %}active{% endif %}" href="{{ url_for('main.network_page') }}">Network</a>
+      <a class="{% if request.endpoint == 'main.settings_page' %}active{% endif %}" href="{{ url_for('main.settings_page') }}">Settings</a>
+    </nav>
+    {% if safe_shutdown_command_id %}
+    <form method="post" action="{{ url_for('main.run_named_command', command_id=safe_shutdown_command_id) }}">
+      <button type="submit" class="btn btn-danger">Shutdown Pi</button>
+    </form>
+    {% endif %}
+    <form method="post" action="{{ url_for('auth.logout') }}">
+      <button type="submit" class="btn btn-secondary">Logout</button>
+    </form>
+  </aside>
+  <main class="content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-wrap">
+          {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+</div>
+<footer class="app-footer">
+  {% if brand_link_url %}<a href="{{ brand_link_url }}" target="_blank" rel="noreferrer">{{ brand_link_text or brand_link_url }}</a>{% endif %}
+</footer>
+{% block scripts %}{% endblock %}
+</body>
+</html>
+
+
+

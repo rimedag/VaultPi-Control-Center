@@ -1,0 +1,19 @@
+﻿[Unit]
+Description=VaultPi Control Center
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/opt/vaultpi-control-center
+EnvironmentFile=-/etc/default/vaultpi-control-center
+EnvironmentFile=-/opt/vaultpi-control-center/.env
+ExecStart=/bin/bash -lc 'exec /opt/vaultpi-control-center/venv/bin/gunicorn -w 1 -k gthread --threads 2 -b 0.0.0.0:${CC_PORT:-8000} wsgi:app'
+Restart=always
+RestartSec=5
+TimeoutStopSec=20
+
+[Install]
+WantedBy=multi-user.target

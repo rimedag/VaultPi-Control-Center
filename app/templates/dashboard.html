@@ -1,0 +1,100 @@
+﻿{% extends "base.html" %}
+{% block title %} - Overview{% endblock %}
+{% block content %}
+<h2>Overview Dashboard</h2>
+<div class="grid cols-3">
+  <div class="card"><h3>Hostname</h3><p>{{ metrics.hostname }}</p></div>
+  <div class="card"><h3>Current Time</h3><p>{{ metrics.current_time }}</p></div>
+  <div class="card"><h3>Uptime</h3><p>{{ metrics.uptime }}</p></div>
+  <div class="card"><h3>CPU</h3><p>{{ metrics.cpu_percent }}%</p></div>
+  <div class="card"><h3>RAM</h3><p>{{ metrics.ram_used_mb }} / {{ metrics.ram_total_mb }} MB ({{ metrics.ram_percent }}%)</p></div>
+  <div class="card"><h3>Disk</h3><p>{{ metrics.disk_used_gb }} / {{ metrics.disk_total_gb }} GB ({{ metrics.disk_percent }}%)</p></div>
+  <div class="card"><h3>Temperature</h3><p>{% if metrics.temperature_c is not none %}{{ metrics.temperature_c }} C{% else %}n/a{% endif %}</p></div>
+  <div class="card"><h3>Load Avg</h3><p>{{ metrics.load_avg }}</p></div>
+  <div class="card">
+    <h3>Network</h3>
+    <p>{{ metrics.ip_addresses | join(', ') or 'n/a' }}</p>
+    {% if tailscale.available %}
+      {% if tailscale.connected %}
+        <p>Tailscale: <span class="status up">{{ tailscale.ip }}</span></p>
+      {% else %}
+        <p>Tailscale: <span class="status down">not connected</span></p>
+      {% endif %}
+    {% else %}
+      <p class="muted">Tailscale: not installed</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="grid cols-2">
+  <div class="card">
+    <h3>Service Summary</h3>
+    <p>Local up/down: {{ counts.local_up }}/{{ counts.local_down }} ({{ counts.local_total }} total)</p>
+    <p>Remote up/down: {{ counts.remote_up }}/{{ counts.remote_down }} ({{ counts.remote_total }} total)</p>
+  </div>
+  <div class="card">
+    <div class="row between gap">
+      <h3>Quick Links</h3>
+      {% if safe_shutdown_command_id %}
+      <form method="post" action="{{ url_for('main.run_named_command', command_id=safe_shutdown_command_id) }}">
+        <button class="btn btn-danger" type="submit">Shutdown Pi</button>
+      </form>
+      {% endif %}
+    </div>
+    {% for name, link in quick_links.items() %}
+      {% if link %}
+      <p>
+        <a href="{{ link }}" target="_blank" rel="noreferrer">{{ name }}</a>
+        <span class="status {{ quick_status.get(name, 'unknown') }}">{{ quick_status.get(name, 'unknown') }}</span>
+      </p>
+      {% endif %}
+    {% endfor %}
+  </div>
+</div>
+
+<div class="grid cols-2">
+  <div class="card">
+    <h3>Android Monitoring</h3>
+    <p>
+      Termux SSH ({{ android_monitor.host }}:{{ android_monitor.ssh_port }})
+      <span class="status {{ android_monitor.termux_status }}">{{ android_monitor.termux_status }}</span>
+      {% if android_monitor.termux_response_ms is not none %}<span class="muted">({{ android_monitor.termux_response_ms }} ms)</span>{% endif %}
+    </p>
+    <p>
+      Android Gitea
+      <span class="status {{ android_monitor.android_gitea_status }}">{{ android_monitor.android_gitea_status }}</span>
+      {% if android_monitor.android_gitea_response_ms is not none %}<span class="muted">({{ android_monitor.android_gitea_response_ms }} ms)</span>{% endif %}
+      {% if android_monitor.gitea_url %}
+        <span>- <a href="{{ android_monitor.gitea_url }}" target="_blank" rel="noreferrer">open</a></span>
+      {% else %}
+        <span class="muted">- set Android Gitea URL in Settings</span>
+      {% endif %}
+    </p>
+  </div>
+  <div class="card">
+    <h3>Mounted Paths</h3>
+    {% if mount_paths %}
+      {% for path in mount_paths %}<p>{{ path }}</p>{% endfor %}
+    {% else %}
+      <p class="muted">No mounts detected under /mnt or /media</p>
+    {% endif %}
+  </div>
+  <div class="card">
+    <h3>Recent Activity</h3>
+    <div class="table-wrap">
+    <table>
+      <tr><th>Time</th><th>Event</th><th>Project</th><th>Message</th></tr>
+      {% for item in recent_activity %}
+        <tr>
+          <td>{{ item.created_at }}</td>
+          <td>{{ item.event_type }}</td>
+          <td>{{ item.project_name or '-' }}</td>
+          <td>{{ item.message }}</td>
+        </tr>
+      {% endfor %}
+    </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

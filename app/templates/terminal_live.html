@@ -1,0 +1,124 @@
+﻿{% extends "base.html" %}
+{% block title %} - Terminal{% endblock %}
+{% block content %}
+<h2>Live Terminal</h2>
+<div class="card">
+  <div class="row between gap">
+    <div>
+      <p class="muted">Interactive shell session on the Raspberry Pi. This is closer to SSH than the basic console and stays live while this page is open.</p>
+    </div>
+    <div class="row gap">
+      <button class="btn btn-secondary" id="terminal-reset" type="button">Reset Session</button>
+      <a class="btn btn-secondary" href="{{ url_for('main.terminal_console') }}">Basic Console</a>
+    </div>
+  </div>
+</div>
+<div class="card">
+  <div id="terminal-shell" class="terminal-shell" tabindex="0" aria-label="Live terminal output"></div>
+  <p class="muted small">Tip: tap the terminal area first on mobile, then type. Supported keys include Enter, Backspace, Tab, arrows, and Ctrl+C.</p>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  const shell = document.getElementById('terminal-shell');
+  const resetBtn = document.getElementById('terminal-reset');
+  let cursor = 0;
+  let pollTimer = null;
+  let displayBuffer = '';
+
+  function stripTerminalControl(text) {
+    if (!text) return '';
+    return text
+      .replace(/\x1b\][^\x07\x1b]*(?:\x07|\x1b\\)/g, '')
+      .replace(/\x1b\[[0-9:;<=>?]*[ -/]*[@-~]/g, '')
+      .replace(/\x1b[@-_]/g, '')
+      .replace(/\r\n/g, '\n')
+      .replace(/\r(?!\n)/g, '\n');
+  }
+
+  function renderShell() {
+    shell.textContent = displayBuffer;
+    shell.scrollTop = shell.scrollHeight;
+  }
+
+  function appendOutput(text) {
+    if (!text) return;
+    displayBuffer += stripTerminalControl(text);
+    renderShell();
+  }
+
+  async function poll() {
+    try {
+      const res = await fetch(`{{ url_for('main.terminal_live_poll') }}?cursor=${cursor}`, { cache: 'no-store' });
+      if (!res.ok) {
+        appendOutput(`\n[terminal unavailable: ${res.status}]\n`);
+        return;
+      }
+      const data = await res.json();
+      if (data.reset) {
+        displayBuffer = stripTerminalControl(data.output || '');
+        renderShell();
+      } else {
+        appendOutput(data.output || '');
+      }
+      cursor = data.cursor || 0;
+    } catch (err) {
+      appendOutput(`\n[poll failed: ${err}]\n`);
+    }
+  }
+
+  async function send(data) {
+    await fetch('{{ url_for('main.terminal_live_input') }}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data })
+    });
+  }
+
+  function keyToData(event) {
+    if (event.ctrlKey && !event.shiftKey && !event.altKey) {
+      if (event.key === 'c' || event.key === 'C') return '\u0003';
+      if (event.key === 'd' || event.key === 'D') return '\u0004';
+      if (event.key === 'l' || event.key === 'L') return '\u000c';
+    }
+    if (event.key === 'Enter') return '\r';
+    if (event.key === 'Backspace') return '\u007f';
+    if (event.key === 'Tab') return '\t';
+    if (event.key === 'ArrowUp') return '\u001b[A';
+    if (event.key === 'ArrowDown') return '\u001b[B';
+    if (event.key === 'ArrowRight') return '\u001b[C';
+    if (event.key === 'ArrowLeft') return '\u001b[D';
+    if (event.key === 'Escape') return '\u001b';
+    if (event.key.length === 1 && !event.metaKey && !event.altKey) return event.key;
+    return '';
+  }
+
+  shell.addEventListener('keydown', async (event) => {
+    const data = keyToData(event);
+    if (!data) return;
+    event.preventDefault();
+    await send(data);
+    await poll();
+  });
+
+  shell.addEventListener('click', () => shell.focus());
+
+  resetBtn.addEventListener('click', async () => {
+    await fetch('{{ url_for('main.terminal_live_reset') }}', { method: 'POST' });
+    displayBuffer = '';
+    renderShell();
+    cursor = 0;
+    shell.focus();
+    await poll();
+  });
+
+  poll();
+  shell.focus();
+  pollTimer = window.setInterval(poll, 700);
+  window.addEventListener('beforeunload', () => {
+    if (pollTimer) window.clearInterval(pollTimer);
+  });
+})();
+</script>
+{% endblock %}

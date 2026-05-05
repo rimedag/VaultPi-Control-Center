@@ -1,0 +1,155 @@
+﻿{% extends "base.html" %}
+{% block title %} - Actions{% endblock %}
+{% block content %}
+<h2>Quick Actions</h2>
+<div class="card">
+  <div class="row between gap">
+    <h3>Operational Guardrails</h3>
+    <a class="btn btn-secondary" href="{{ url_for('main.restore_playbook') }}">Open Restore Playbook</a>
+  </div>
+  {% if ops_warnings %}
+    {% for warn in ops_warnings %}
+      <div class="flash {% if warn.level == 'error' %}flash-error{% else %}flash-warning{% endif %}">{{ warn.message }}</div>
+    {% endfor %}
+  {% else %}
+    <p class="muted">No active operational warnings.</p>
+  {% endif %}
+</div>
+<div class="card">
+  <h3>Gitea Operations</h3>
+  <p class="muted">Shell scripts stay source of truth. UI only triggers and monitors allowed scripts.</p>
+  <div class="grid cols-2">
+    {% for key, job in gitea_jobs.items() %}
+      <div class="card op-card">
+        <div class="row between gap">
+          <strong>{{ job.label }}</strong>
+          <span class="op-badge
+            {% if job.running %}op-running
+            {% elif job.last_status == 'success' %}op-success
+            {% elif job.last_status == 'failed' %}op-failed
+            {% else %}op-never{% endif %}">
+            {% if job.running %}running{% else %}{{ job.last_status }}{% endif %}
+          </span>
+        </div>
+        <div class="muted small">
+          {% if job.job_type == 'script' %}<div>Script: <code>{{ job.script_path }}</code></div>{% endif %}
+          {% if job.job_type == 'internal' %}<div>Mode: internal operation</div>{% endif %}
+          <div>Started: {{ job.last_started_at or '-' }}</div>
+          <div>Finished: {{ job.last_finished_at or '-' }}</div>
+          <div>Duration: {{ job.last_duration_seconds if job.last_duration_seconds is not none else '-' }}s</div>
+          <div>Message: {{ job.last_message or '-' }}</div>
+          <div>Artifact: {{ job.last_artifact or '-' }}</div>
+        </div>
+
+        {% if key == 'gitea-sync-android' and not job.script_exists %}
+          <div class="flash flash-error">Android sync script not yet configured</div>
+        {% endif %}
+
+        <div class="row gap">
+          <form method="post" action="{{ url_for('main.gitea_run', job_key=key) }}">
+            <button class="btn" type="submit"
+                    {% if job.running or not command_execution_enabled or (job.job_type == 'script' and not job.script_exists) %}disabled{% endif %}>
+              {{ job.run_button_label }}
+            </button>
+          </form>
+          <a class="btn btn-secondary" href="{{ url_for('main.gitea_log', job_key=key) }}">View Log</a>
+          <a class="btn btn-secondary" href="{{ url_for('main.gitea_status', job_key=key) }}">View Status JSON</a>
+          {% if job.editable_script %}
+            <a class="btn btn-secondary" href="{{ url_for('main.gitea_script', job_key=key) }}">Edit Script</a>
+          {% endif %}
+        </div>
+
+        {% if job.tail %}
+          <details>
+            <summary>Recent output</summary>
+            <pre class="log-box small-log">{{ job.tail }}</pre>
+          </details>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="row between gap">
+    <div>
+      <h3>Console</h3>
+      <p class="muted">Run lightweight shell commands directly from VaultPi without opening a separate SSH client.</p>
+    </div>
+    <a class="btn" href="{{ url_for('main.terminal_live') }}">Open Terminal</a>
+    <a class="btn btn-secondary" href="{{ url_for('main.terminal_console') }}">Open Console</a>
+  </div>
+</div>
+{% if safe_shutdown_command %}
+<div class="card">
+  <h3>Safe Shutdown</h3>
+  <p class="muted">Stops the important services, flushes writes, and powers the Pi off so it is safe to unplug afterwards.</p>
+  <form method="post" action="{{ url_for('main.run_named_command', command_id=safe_shutdown_command.id) }}">
+    <button class="btn btn-danger" type="submit">Shutdown And Make Safe To Unplug</button>
+  </form>
+</div>
+{% endif %}
+<div class="card">
+  <h3>Config Sync</h3>
+  <p>Source file: <code>{{ config_file_path }}</code></p>
+  <form method="post" action="{{ url_for('main.sync_config_action') }}">
+    <button class="btn" type="submit">Sync Projects/Commands/Settings from Config</button>
+  </form>
+</div>
+<div class="card">
+  <h3>Named Commands (Allowlist)</h3>
+  <p class="muted">Commands that use <code>sudo</code> require passwordless sudo rights for the <code>pi</code> service user, otherwise they will fail and the first error line will be shown in the flash message.</p>
+  <div class="table-wrap">
+  <table>
+    <tr><th>Name</th><th>Description</th><th>Command</th><th>Run</th></tr>
+    {% for c in commands %}
+      <tr>
+        <td>{{ c.name }}</td>
+        <td>{{ c.description }}</td>
+        <td><code>{{ c.command }}</code></td>
+        <td>
+          <form method="post" action="{{ url_for('main.run_named_command', command_id=c.id) }}">
+            <button class="btn" type="submit">Execute</button>
+          </form>
+        </td>
+      </tr>
+    {% endfor %}
+  </table>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Service Actions</h3>
+  <p class="muted">Start/stop/restart buttons run as the app service user. If those commands use <code>sudo</code>, make sure the required services are allowed in sudoers without a password prompt.</p>
+  <div class="table-wrap">
+  <table>
+    <tr><th>Service</th><th>Start</th><th>Stop</th><th>Restart</th></tr>
+    {% for s in local_services %}
+      <tr>
+        <td>{{ s.name }}</td>
+        <td><form method="post" action="{{ url_for('main.local_service_action', project_id=s.id, action='start') }}"><button class="btn" type="submit">Start</button></form></td>
+        <td><form method="post" action="{{ url_for('main.local_service_action', project_id=s.id, action='stop') }}"><button class="btn btn-danger" type="submit">Stop</button></form></td>
+        <td><form method="post" action="{{ url_for('main.local_service_action', project_id=s.id, action='restart') }}"><button class="btn" type="submit">Restart</button></form></td>
+      </tr>
+    {% endfor %}
+  </table>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Maintenance</h3>
+  <form method="post" action="{{ url_for('main.clear_checks') }}">
+    <button class="btn btn-secondary" type="submit">Clear Cached Status Data</button>
+  </form>
+</div>
+{% if gitea_running %}
+<script>
+  setTimeout(function () { window.location.reload(); }, 8000);
+</script>
+{% endif %}
+{% endblock %}
+
+
+
+
+

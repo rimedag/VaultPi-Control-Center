@@ -1,0 +1,168 @@
+<article class="card knowledge-article">
+  <div class="row between gap">
+    <div>
+      <h2>{{ selected_article.title }}</h2>
+      <p>{{ selected_article.shortDescription }}</p>
+    </div>
+    <a class="btn btn-secondary knowledge-back-link" href="#knowledge-list">Article List</a>
+  </div>
+
+  <div class="badge-row">
+    <span class="knowledge-badge">{{ selected_article.category }}</span>
+    <span class="knowledge-badge">{{ selected_article.difficulty }}</span>
+    {% for badge in selected_article.badges %}
+    <span class="knowledge-badge">{{ badge }}</span>
+    {% endfor %}
+  </div>
+
+  <div class="grid cols-2">
+    <div class="card compact-card">
+      <h3>Quick Compare</h3>
+      <p><strong>Why NetHunter:</strong> {{ selected_article.differences.whyUseOnNetHunterInsteadOfDesktopKali|join(" ") }}</p>
+      <p><strong>Why Desktop Kali:</strong> {{ selected_article.differences.whyUseDesktopKaliInsteadOfNetHunter|join(" ") }}</p>
+    </div>
+    <div class="card compact-card">
+      <h3>Metadata</h3>
+      <p><strong>Updated:</strong> {{ selected_article.lastUpdated }}</p>
+      {% if selected_article.prerequisites %}<p><strong>Prerequisites:</strong> {{ selected_article.prerequisites|join(", ") }}</p>{% endif %}
+    </div>
+  </div>
+
+  <section class="card compact-card">
+    <h3>Decision Guidance</h3>
+    <div class="grid cols-2">
+      <div>
+        <p><strong>Why use this on NetHunter:</strong> {{ selected_article.differences.whyUseOnNetHunterInsteadOfDesktopKali|join(" ") }}</p>
+        <p><strong>When mobile is enough:</strong> {{ selected_article.differences.whenMobileIsEnough|join(" ") }}</p>
+      </div>
+      <div>
+        <p><strong>Why use this on desktop Kali:</strong> {{ selected_article.differences.whyUseDesktopKaliInsteadOfNetHunter|join(" ") }}</p>
+        <p><strong>When desktop is the better choice:</strong> {{ selected_article.differences.whenDesktopIsBetter|join(" ") }}</p>
+      </div>
+    </div>
+  </section>
+
+  {% if selected_article.generalSections %}
+    {% include "_knowledge_blocks.html" %}
+  {% endif %}
+
+  {% if selected_article.warnings %}
+  <div class="knowledge-callout warning">
+    <h3>Warnings</h3>
+    <ul>{% for item in selected_article.warnings %}<li>{{ item }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+
+  {% if selected_article.limitations %}
+  <div class="knowledge-callout caution">
+    <h3>Limitations</h3>
+    <ul>{% for item in selected_article.limitations %}<li>{{ item }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+
+  <div class="grid cols-2">
+    <section class="card compact-card">
+      <h3>NetHunter</h3>
+      <p><strong>Overview:</strong> {{ selected_article.nethunter.overview }}</p>
+      {% if selected_article.nethunter.installOrAccess %}<p><strong>Install or access:</strong> {{ selected_article.nethunter.installOrAccess }}</p>{% endif %}
+      {% if selected_article.nethunter.workflow %}
+      <h4>Workflow</h4>
+      <ol>{% for item in selected_article.nethunter.workflow %}<li>{{ item }}</li>{% endfor %}</ol>
+      {% endif %}
+      {% if selected_article.nethunter.controls %}
+      <div class="table-wrap">
+        <table>
+          <tr><th>Control</th><th>Type</th><th>Description</th><th>When to use</th><th>Caution</th></tr>
+          {% for control in selected_article.nethunter.controls %}
+          <tr>
+            <td><code>{{ control.name }}</code></td>
+            <td>{{ control.type }}</td>
+            <td>{{ control.description }}</td>
+            <td>{{ control.whenToUse }}</td>
+            <td>{{ control.caution }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+      {% endif %}
+      {% if selected_article.nethunter.commands %}
+      <h4>Commands / Examples</h4>
+      {% for command in selected_article.nethunter.commands %}
+      <div class="command-card">
+        <div class="row between gap">
+          <strong>{{ command.label }}</strong>
+          <button class="btn btn-secondary copy-command" type="button" data-command="{{ command.command }}">Copy</button>
+        </div>
+        <pre class="log-box small">{{ command.command }}</pre>
+        {% if command.notes %}<p class="muted small">{{ command.notes }}</p>{% endif %}
+      </div>
+      {% endfor %}
+      {% endif %}
+    </section>
+
+    <section class="card compact-card">
+      <h3>Kali Linux</h3>
+      <p><strong>Overview:</strong> {{ selected_article.kaliLinux.overview }}</p>
+      {% if selected_article.kaliLinux.installOrAccess %}<p><strong>Install or access:</strong> {{ selected_article.kaliLinux.installOrAccess }}</p>{% endif %}
+      {% if selected_article.kaliLinux.workflow %}
+      <h4>Workflow</h4>
+      <ol>{% for item in selected_article.kaliLinux.workflow %}<li>{{ item }}</li>{% endfor %}</ol>
+      {% endif %}
+      {% if selected_article.kaliLinux.commands %}
+      <h4>Commands / Examples</h4>
+      {% for command in selected_article.kaliLinux.commands %}
+      <div class="command-card">
+        <div class="row between gap">
+          <strong>{{ command.label }}</strong>
+          <button class="btn btn-secondary copy-command" type="button" data-command="{{ command.command }}">Copy</button>
+        </div>
+        <pre class="log-box small">{{ command.command }}</pre>
+        {% if command.notes %}<p class="muted small">{{ command.notes }}</p>{% endif %}
+      </div>
+      {% endfor %}
+      {% endif %}
+    </section>
+  </div>
+
+  <section class="card compact-card">
+    <h3>NetHunter vs Kali Linux</h3>
+    <div class="grid cols-2">
+      <div>
+        <h4>Shared</h4>
+        <ul>{% for item in selected_article.differences.whatIsShared %}<li>{{ item }}</li>{% endfor %}</ul>
+        <h4>NetHunter Only</h4>
+        <ul>{% for item in selected_article.differences.nethunterOnly %}<li>{{ item }}</li>{% endfor %}</ul>
+      </div>
+      <div>
+        <h4>Kali Only</h4>
+        <ul>{% for item in selected_article.differences.kaliOnly %}<li>{{ item }}</li>{% endfor %}</ul>
+        <h4>Mobile Limits</h4>
+        <ul>{% for item in selected_article.differences.limitationsOnMobile %}<li>{{ item }}</li>{% endfor %}</ul>
+      </div>
+    </div>
+  </section>
+
+  {% if selected_article.nethunter.exampleScenarios %}
+  <section class="card compact-card">
+    <h3>Example Scenarios</h3>
+    {% for scenario in selected_article.nethunter.exampleScenarios %}
+    <p><strong>{{ scenario.title }}:</strong> {{ scenario.description }}</p>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if selected_article.relatedTools %}
+  <section class="card compact-card">
+      <h3>Related Tools</h3>
+      <div class="badge-row">
+      {% for tool in selected_article.relatedTools %}
+        {% if tool in article_slug_set %}
+      <a class="knowledge-badge" href="{{ url_for('main.nethunter_article', slug=tool) }}">{{ tool }}</a>
+        {% else %}
+      <span class="knowledge-badge">{{ tool }}</span>
+        {% endif %}
+      {% endfor %}
+      </div>
+  </section>
+  {% endif %}
+</article>

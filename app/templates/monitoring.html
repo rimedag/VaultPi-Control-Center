@@ -1,0 +1,74 @@
+﻿{% extends "base.html" %}
+{% block title %} - Monitoring{% endblock %}
+{% block content %}
+<div class="row between">
+  <h2>Monitoring</h2>
+  <div class="row gap">
+    <a class="btn btn-secondary" href="{{ url_for('main.project_create', type='remote app', environment='prod', monitoring_enabled='1', action_enabled='0') }}">Detailed Add</a>
+    <form method="post" action="{{ url_for('main.monitoring_check_now') }}"><button class="btn" type="submit">Run Check Now</button></form>
+  </div>
+</div>
+<div class="card">
+  <h3>Quick Add Monitoring Target</h3>
+  <form class="form-grid" method="post" action="{{ url_for('main.monitoring_quick_add') }}">
+    <label>Name<input name="name" placeholder="service-name or domain" required></label>
+    <label>Healthcheck URL<input name="healthcheck_url" placeholder="https://domain.com/health" required></label>
+    <button class="btn" type="submit">Add Target</button>
+  </form>
+</div>
+<div class="card">
+  <h3>Android Health</h3>
+  <p>
+    Termux SSH ({{ android_monitor.host }}:{{ android_monitor.ssh_port }})
+    <span class="status {{ android_monitor.termux_status }}">{{ android_monitor.termux_status }}</span>
+    {% if android_monitor.termux_response_ms is not none %}<span class="muted">({{ android_monitor.termux_response_ms }} ms)</span>{% endif %}
+  </p>
+  <p>
+    Android Gitea
+    <span class="status {{ android_monitor.android_gitea_status }}">{{ android_monitor.android_gitea_status }}</span>
+    {% if android_monitor.android_gitea_response_ms is not none %}<span class="muted">({{ android_monitor.android_gitea_response_ms }} ms)</span>{% endif %}
+    {% if android_monitor.gitea_url %}
+      <span>- <a href="{{ android_monitor.gitea_url }}" target="_blank" rel="noreferrer">open</a></span>
+    {% else %}
+      <span class="muted">- set Android Gitea URL in Settings</span>
+    {% endif %}
+  </p>
+</div>
+<div class="table-wrap desktop-only">
+<table>
+  <tr><th>Name</th><th>Status</th><th>Code</th><th>Resp</th><th>Uptime %</th><th>Recent</th></tr>
+  {% for s in services %}
+    {% set st = status_map.get(s.id, {}) %}
+    <tr>
+      <td>{{ s.name }}</td>
+      <td><span class="status {{ st.get('status','unknown') }}">{{ st.get('status','unknown') }}</span></td>
+      <td>{{ st.get('status_code','-') }}</td>
+      <td>{{ st.get('response_ms','-') }} ms</td>
+      <td>{{ uptime_map.get(s.id, 0.0) }}%</td>
+      <td>
+        {% for h in history_map.get(s.id, [])[:12] %}
+          {% if h.status == 'up' %}<span class="dot up"></span>{% else %}<span class="dot down"></span>{% endif %}
+        {% endfor %}
+      </td>
+    </tr>
+  {% endfor %}
+</table>
+</div>
+<div class="mobile-card-list mobile-only">
+  {% for s in services %}
+    {% set st = status_map.get(s.id, {}) %}
+    <div class="card compact-card">
+      <h3>{{ s.name }}</h3>
+      <p>Status: <span class="status {{ st.get('status','unknown') }}">{{ st.get('status','unknown') }}</span></p>
+      <p>Code: {{ st.get('status_code','-') }}</p>
+      <p>Response: {{ st.get('response_ms','-') }} ms</p>
+      <p>Uptime: {{ uptime_map.get(s.id, 0.0) }}%</p>
+      <p>
+        {% for h in history_map.get(s.id, [])[:12] %}
+          {% if h.status == 'up' %}<span class="dot up"></span>{% else %}<span class="dot down"></span>{% endif %}
+        {% endfor %}
+      </p>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

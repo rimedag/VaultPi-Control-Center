@@ -1,0 +1,76 @@
+﻿{% extends "base.html" %}
+{% block title %} - Settings{% endblock %}
+{% block content %}
+<h2>Settings</h2>
+<div class="card">
+  <h3>Runtime Notes</h3>
+  <p class="muted">Set <strong>Monitor Interval</strong> to <code>0</code> to disable the background health-check thread and reduce idle resource use.</p>
+  <p class="muted">To stop the app completely, run <code>{{ app_service_commands.stop }}</code> on the Pi. To start it again, run <code>{{ app_service_commands.start }}</code> or reboot the Pi.</p>
+</div>
+<form method="post" class="form-grid">
+  <label>App Name<input name="app_name" value="{{ settings.app_name }}"></label>
+  <label>Dashboard Title<input name="dashboard_title" value="{{ settings.dashboard_title }}"></label>
+  <label>Refresh Interval (seconds)<input name="refresh_interval" value="{{ settings.refresh_interval }}"></label>
+  <label>Monitor Interval (seconds)<input name="monitor_interval" value="{{ settings.monitor_interval }}"></label>
+  <label>History Retention (rows)<input name="history_retention" value="{{ settings.history_retention }}"></label>
+  <label>Config File Path<input name="config_file_path" value="{{ settings.config_file_path }}"></label>
+  <label>Hostname Label<input name="hostname_label" value="{{ settings.hostname_label }}"></label>
+  <label>Bind Host<input name="bind_host" value="{{ settings.bind_host }}"></label>
+  <label>Bind Port<input name="bind_port" value="{{ settings.bind_port }}"></label>
+  <label>Theme
+    <select name="theme">
+      <option value="auto" {% if settings.theme == 'auto' %}selected{% endif %}>auto</option>
+      <option value="light" {% if settings.theme == 'light' %}selected{% endif %}>light</option>
+      <option value="dark" {% if settings.theme == 'dark' %}selected{% endif %}>dark</option>
+    </select>
+  </label>
+
+  <label>Gitea URL<input name="gitea_url" value="{{ settings.gitea_url }}"></label>
+  <label>Gitea Config Path<input name="gitea_config_path" value="{{ settings.gitea_config_path }}" placeholder="/etc/gitea/app.ini"></label>
+  <label>n8n URL<input name="n8n_url" value="{{ settings.n8n_url }}"></label>
+  <label>Filebrowser URL<input name="filebrowser_url" value="{{ settings.filebrowser_url }}"></label>
+  <label>Android Host<input name="android_host" value="{{ settings.android_host }}"></label>
+  <label>Android Termux SSH Port<input name="android_termux_ssh_port" value="{{ settings.android_termux_ssh_port }}"></label>
+  <label>Android SSH User<input name="android_ssh_user" value="{{ settings.android_ssh_user }}"></label>
+  <label>Android Gitea URL<input name="android_gitea_url" value="{{ settings.android_gitea_url }}" placeholder="http://phone.lan:3000"></label>
+  <label>Android Backup Path<input name="android_backup_path" value="{{ settings.android_backup_path }}"></label>
+  <label>Android Mirror Path<input name="android_mirror_path" value="{{ settings.android_mirror_path }}"></label>
+
+  <label>Ops Min Disk Free Percent<input name="ops_min_disk_free_percent" value="{{ settings.ops_min_disk_free_percent }}"></label>
+  <label>Ops Min Disk Free GB<input name="ops_min_disk_free_gb" value="{{ settings.ops_min_disk_free_gb }}"></label>
+  <label>Backup Max Age (hours)<input name="ops_backup_max_age_hours" value="{{ settings.ops_backup_max_age_hours }}"></label>
+  <label>Android Sync Max Age (days)<input name="ops_android_sync_max_age_days" value="{{ settings.ops_android_sync_max_age_days }}"></label>
+  <label>Backup Dir Warn Size (GB)<input name="ops_backup_dir_warn_gb" value="{{ settings.ops_backup_dir_warn_gb }}"></label>
+  <label>Healthcheck Max Age (days)<input name="ops_healthcheck_max_age_days" value="{{ settings.ops_healthcheck_max_age_days }}"></label>
+
+  <label>Footer Link Text<input name="brand_link_text" value="{{ settings.brand_link_text }}" placeholder="rpai.rs"></label>
+  <label>Footer Link URL<input name="brand_link_url" value="{{ settings.brand_link_url }}" placeholder="https://rpai.rs"></label>
+  <label>Cardputer Host Override<input name="cardputer_host" value="{{ settings.cardputer_host }}" placeholder="leave blank to use this Pi IP"></label>
+  <label>Cardputer API Port<input name="cardputer_api_port" value="{{ settings.cardputer_api_port }}"></label>
+  <label>Cardputer Password<input name="cardputer_password" value="{{ settings.cardputer_password }}"></label>
+
+  <label><input type="checkbox" name="module_projects" {% if settings.module_projects == '1' %}checked{% endif %}> Enable Projects module</label>
+  <label><input type="checkbox" name="module_local_services" {% if settings.module_local_services == '1' %}checked{% endif %}> Enable Local Services module</label>
+  <label><input type="checkbox" name="module_remote_services" {% if settings.module_remote_services == '1' %}checked{% endif %}> Enable Remote Services module</label>
+  <label><input type="checkbox" name="module_actions" {% if settings.module_actions == '1' %}checked{% endif %}> Enable Actions module</label>
+  <label><input type="checkbox" name="module_logs" {% if settings.module_logs == '1' %}checked{% endif %}> Enable Logs module</label>
+  <label><input type="checkbox" name="auth_enabled" {% if settings.auth_enabled == '1' %}checked{% endif %}> Authentication enabled</label>
+  <label><input type="checkbox" name="command_execution_enabled" {% if settings.command_execution_enabled == '1' %}checked{% endif %}> Command execution enabled</label>
+
+  <button class="btn" type="submit">Save Settings</button>
+</form>
+<div class="card">
+  <h3>Cardputer Link</h3>
+  <p class="muted">Cardputer should target this Pi on port <code>{{ settings.cardputer_api_port }}</code> using the shared password above.</p>
+  <p><code>http://{{ settings.cardputer_host or hostname_label or 'this-pi-ip' }}:{{ settings.cardputer_api_port }}</code></p>
+  <p class="muted">Browser UI stays on the main control-center port: <code>http://{{ settings.cardputer_host or hostname_label or 'this-pi-ip' }}:{{ settings.bind_port }}/cardputer</code></p>
+</div>
+<div class="card">
+  <h3>Service Commands</h3>
+  <p><code>{{ app_service_commands.start }}</code></p>
+  <p><code>{{ app_service_commands.stop }}</code></p>
+  <p><code>{{ app_service_commands.restart }}</code></p>
+  <p><code>{{ app_service_commands.status }}</code></p>
+  <p><code>{{ app_service_commands.logs }}</code></p>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+﻿{% extends "base.html" %}
+{% block title %} - Project Details{% endblock %}
+{% block content %}
+<h2>{{ project.name }}</h2>
+<p>{{ project.description }}</p>
+<p><strong>Type:</strong> {{ project.type }} | <strong>Environment:</strong> {{ project.environment }} | <strong>Status:</strong> <span class="status {{ status.status if status else 'unknown' }}">{{ status.status if status else 'unknown' }}</span></p>
+<p><strong>Local URL:</strong> {{ project.local_url or '-' }}</p>
+<p><strong>Remote URL:</strong> {{ project.remote_url or '-' }}</p>
+<p><strong>Repo:</strong> {{ project.repo_url or '-' }}</p>
+<p><strong>Health:</strong> {{ project.healthcheck_url or '-' }}</p>
+<p><a class="btn" href="{{ url_for('main.project_edit', project_id=project.id) }}">Edit</a></p>
+
+<div class="card">
+  <h3>Recent Checks</h3>
+  <div class="table-wrap">
+  <table>
+    <tr><th>Time</th><th>Status</th><th>Code</th><th>Response ms</th><th>Error</th></tr>
+    {% for c in history %}
+      <tr>
+        <td>{{ c.checked_at }}</td>
+        <td><span class="status {{ c.status }}">{{ c.status }}</span></td>
+        <td>{{ c.status_code or '-' }}</td>
+        <td>{{ c.response_ms or '-' }}</td>
+        <td>{{ c.error_text or '-' }}</td>
+      </tr>
+  {% endfor %}
+  </table>
+  </div>
+</div>
+{% endblock %}

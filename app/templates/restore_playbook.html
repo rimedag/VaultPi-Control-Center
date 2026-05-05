@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %} - Restore Playbook{% endblock %}
+{% block content %}
+<h2>Restore Playbook</h2>
+
+<div class="card">
+  <h3>Current Backup Locations</h3>
+  <p>Local backups: <code>{{ local_backup_dir }}</code></p>
+  <p>Android backups: <code>{{ android_backup_dir }}</code></p>
+  <p>Android mirrors: <code>{{ android_mirror_dir }}</code></p>
+  <p>Local Gitea repos: <code>{{ local_repo_dir }}</code></p>
+  <p class="muted">Retention target: newest single backup archive locally and on Android.</p>
+  <p>Latest local backup: <strong>{{ latest_backup_file or 'not found' }}</strong> <span class="muted">{{ latest_backup_time or '' }}</span></p>
+  <p>Current repo count: <strong>{{ repo_count }}</strong></p>
+  <p>Android sync status: <strong>{{ android_sync_status }}</strong> <span class="muted">{{ android_sync_finished_at or '' }}</span></p>
+</div>
+
+<div class="card">
+  <h3>Full Instance Restore (Fastest Complete Path)</h3>
+  <pre class="log-box">sudo systemctl stop gitea
+cd /tmp
+# pick latest backup from /backup/gitea
+unzip /backup/gitea/&lt;latest-backup.zip&gt; -d gitea-restore
+
+# restore into expected Gitea paths based on archive structure
+# typical targets:
+#   /var/lib/gitea/data
+#   /var/lib/gitea/custom
+#   database dump file
+
+sudo systemctl start gitea</pre>
+  <p class="muted">Restore order: stop service -> restore files/data/db -> start service -> validate login/repos.</p>
+</div>
+
+<div class="card">
+  <h3>Repo-Only Emergency Recovery</h3>
+  <pre class="log-box"># If full restore is blocked, recover repositories first:
+rsync -a &lt;android-mirror-source&gt;/ /var/lib/gitea/data/gitea-repositories/
+sudo chown -R git:git /var/lib/gitea/data/gitea-repositories
+sudo systemctl restart gitea</pre>
+  <p class="muted">Repo-only recovery may not include full metadata (issues/users/settings) until full restore is done.</p>
+</div>
+
+<div class="card">
+  <h3>Verification After Restore</h3>
+  <ul>
+    <li>Gitea service starts and login works.</li>
+    <li>Expected repository count is present.</li>
+    <li>Key organizations are visible.</li>
+    <li>Open one or two critical repos and inspect recent commits.</li>
+  </ul>
+</div>
+
+<div class="card">
+  <h3>Operational Notes</h3>
+  <p>Backup scripts:</p>
+  <ul>
+    <li><code>/usr/local/bin/gitea-backup.sh</code> (local backup)</li>
+    <li><code>/usr/local/bin/gitea-sync-android.sh</code> (manual Android sync)</li>
+  </ul>
+  <p>Live operation status is available from the Quick Actions job cards and their status JSON files.</p>
+  <div class="flash flash-warning">
+    During incident response, trust the latest successful backup verification and health-check results before destructive restore steps.
+  </div>
+</div>
+{% endblock %}

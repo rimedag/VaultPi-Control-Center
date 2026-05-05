@@ -1,0 +1,41 @@
+{% for block in selected_article.generalSections %}
+  {% if block.type == "text" %}
+  <section class="card compact-card">
+    <h3>{{ block.title }}</h3>
+    <p>{{ block.body }}</p>
+  </section>
+  {% elif block.type == "callout" %}
+  <section class="knowledge-callout {{ block.tone }}">
+    <h3>{{ block.title }}</h3>
+    <p>{{ block.body }}</p>
+  </section>
+  {% elif block.type == "warning" %}
+  <section class="knowledge-callout warning">
+    <h3>{{ block.title }}</h3>
+    <ul>{% for item in block["items"] %}<li>{{ item }}</li>{% endfor %}</ul>
+  </section>
+  {% elif block.type == "checklist" %}
+  <section class="card compact-card">
+    <h3>{{ block.title }}</h3>
+    <ul>{% for item in block["items"] %}<li>{{ item }}</li>{% endfor %}</ul>
+  </section>
+  {% elif block.type == "controls" %}
+  <section class="card compact-card">
+    <h3>{{ block.title }}</h3>
+    <div class="table-wrap">
+      <table>
+        <tr><th>Control</th><th>Type</th><th>Description</th><th>When to use</th><th>Caution</th></tr>
+        {% for control in block.controls %}
+        <tr>
+          <td><code>{{ control.name }}</code></td>
+          <td>{{ control.type }}</td>
+          <td>{{ control.description }}</td>
+          <td>{{ control.whenToUse }}</td>
+          <td>{{ control.caution }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+    </div>
+  </section>
+  {% endif %}
+{% endfor %}

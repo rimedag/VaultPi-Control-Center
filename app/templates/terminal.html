@@ -1,0 +1,40 @@
+﻿{% extends "base.html" %}
+{% block title %} - Console{% endblock %}
+{% block content %}
+<h2>Console</h2>
+<div class="card">
+  <p class="muted">This runs shell commands locally on the Raspberry Pi. It is lightweight and non-interactive, so it is closer to a command runner than a full SSH terminal.</p>
+  <form class="form-grid" method="post" action="{{ url_for('main.terminal_console') }}">
+    <label>Working Directory<input name="working_directory" value="{{ form_data.working_directory }}" placeholder="/opt/vaultpi-control-center"></label>
+    <label>Timeout (seconds)<input name="timeout_sec" value="{{ form_data.timeout_sec }}" inputmode="numeric"></label>
+    <label style="grid-column: 1 / -1;">Command<textarea name="command" class="script-editor" placeholder="systemctl status gitea --no-pager">{{ form_data.command }}</textarea></label>
+    <div class="row gap" style="grid-column: 1 / -1;">
+      <button class="btn" type="submit">Run Command</button>
+      <a class="btn btn-secondary" href="{{ url_for('main.actions') }}">Back To Actions</a>
+    </div>
+  </form>
+</div>
+<div class="card">
+  <h3>Suggested Commands</h3>
+  <div class="badge-row">
+    {% for command in suggested_commands %}
+      <span class="knowledge-badge"><code>{{ command }}</code></span>
+    {% endfor %}
+  </div>
+</div>
+{% if result %}
+<div class="grid cols-2">
+  <div class="card compact-card">
+    <div class="row between gap">
+      <h3>Stdout</h3>
+      <span class="status {% if result.exit_code == 0 %}up{% else %}down{% endif %}">exit {{ result.exit_code }}</span>
+    </div>
+    <pre class="log-box">{{ result.stdout or '[no stdout]' }}</pre>
+  </div>
+  <div class="card compact-card">
+    <h3>Stderr</h3>
+    <pre class="log-box">{{ result.stderr or '[no stderr]' }}</pre>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

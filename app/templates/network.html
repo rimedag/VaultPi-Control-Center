@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %} - Network{% endblock %}
+{% block content %}
+<h2>Network</h2>
+
+<div class="card">
+  <h3>Tailscale - Secure Remote Access</h3>
+  {% if tailscale.available %}
+    {% if tailscale.connected %}
+      <p>Status: <span class="status up">connected</span></p>
+      <p>Tailscale IP: <strong>{{ tailscale.ip }}</strong></p>
+      {% if tailscale.hostname %}<p>Hostname: <code>{{ tailscale.hostname }}</code></p>{% endif %}
+      <p class="muted">You can reach this Pi from any device in your Tailscale network at <code>{{ tailscale.ip }}:{{ settings.bind_port or '8000' }}</code>, even when away from home.</p>
+    {% else %}
+      <p>Status: <span class="status down">not connected</span></p>
+      <p class="muted">Tailscale is installed but not running or not authenticated. Run the following on this Pi to connect:</p>
+      <pre>sudo tailscale up</pre>
+    {% endif %}
+  {% else %}
+    <p>Status: <span class="status unknown">not installed</span></p>
+    <p class="muted">Tailscale is not installed. Install it to access this Pi securely from anywhere:</p>
+    <pre>curl -fsSL https://tailscale.com/install.sh | sh
+sudo tailscale up</pre>
+    <p class="muted">After setup, only devices on your Tailscale account can reach this Pi - nobody else.</p>
+  {% endif %}
+</div>
+
+<div class="card">
+  <h3>Known Wi-Fi Networks</h3>
+  <p class="muted">
+    The Pi will automatically connect to any of these networks when in range.
+    When on any network with internet access, Tailscale will come up and you can reach the Pi remotely.
+  </p>
+  <p class="muted" style="color: var(--color-warning, #b45309);">
+    <strong>Note:</strong> Wi-Fi passwords are stored in plaintext in the local database.
+    This is intentional - this Pi is a personal device not meant to be shared, and the database
+    is not accessible to anyone without login credentials to this dashboard.
+  </p>
+
+  {% if networks %}
+  <div class="table-wrap">
+    <table>
+      <tr><th>SSID</th><th>Priority</th><th>Added</th><th></th></tr>
+      {% for net in networks %}
+      <tr>
+        <td>
+          {{ net.ssid }}
+          {% if nearby and net.ssid in nearby %}
+            <span class="status up" title="In range">in range</span>
+          {% endif %}
+        </td>
+        <td>{{ net.priority }}</td>
+        <td>{{ net.created_at[:10] }}</td>
+        <td>
+          <form method="post" action="{{ url_for('main.network_delete', network_id=net.id) }}">
+            <button class="btn btn-danger" type="submit">Remove</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% else %}
+    <p class="muted">No known networks saved yet.</p>
+  {% endif %}
+
+  <h4>Add Network</h4>
+  <form method="post" action="{{ url_for('main.network_add') }}" class="form-grid">
+    {% if nearby %}
+    <label>Choose from nearby networks
+      <select name="ssid" id="ssid-select">
+        <option value="">- type manually below -</option>
+        {% for ssid in nearby %}
+        <option value="{{ ssid }}">{{ ssid }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Or type SSID manually<input name="ssid" id="ssid-manual" placeholder="Network name"></label>
+    {% else %}
+    <label>SSID (network name)<input name="ssid" placeholder="My Home Network"></label>
+    {% endif %}
+    <label>Password<input type="password" name="psk" placeholder="Wi-Fi password" autocomplete="new-password"></label>
+    <button class="btn" type="submit">Save Network</button>
+  </form>
+  {% if nearby %}
+  <script>
+    const sel = document.getElementById('ssid-select');
+    const manual = document.getElementById('ssid-manual');
+    if (sel && manual) {
+      sel.addEventListener('change', () => { if (sel.value) manual.value = sel.value; });
+    }
+  </script>
+  {% endif %}
+</div>
+
+{% if nearby %}
+<div class="card">
+  <h3>Nearby Networks</h3>
+  <p class="muted">Networks currently visible to the Pi's Wi-Fi adapter.</p>
+  <ul>
+    {% for ssid in nearby %}<li>{{ ssid }}</li>{% endfor %}
+  </ul>
+</div>
+{% endif %}
+{% endblock %}

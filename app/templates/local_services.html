@@ -1,0 +1,41 @@
+﻿{% extends "base.html" %}
+{% block title %} - Local Services{% endblock %}
+{% block content %}
+<div class="row between">
+  <h2>Local Services / Playground</h2>
+  <a class="btn" href="{{ url_for('main.project_create', type='local app', environment='local', monitoring_enabled='1', action_enabled='1') }}">Detailed Add</a>
+</div>
+<div class="card">
+  <h3>Quick Add Local Service</h3>
+  <p class="muted">Service actions run as the app's <code>pi</code> user. If you use <code>sudo systemctl ...</code>, that user needs passwordless sudo for those service commands.</p>
+  <form class="form-grid" method="post" action="{{ url_for('main.local_service_quick_add') }}">
+    <label>Name<input name="name" placeholder="My Local App" required></label>
+    <label>Local URL<input name="local_url" placeholder="http://vaultpi.local:5010"></label>
+    <label>Healthcheck URL<input name="healthcheck_url" placeholder="http://127.0.0.1:5010/health"></label>
+    <label>Start Command<input name="run_command" placeholder="sudo systemctl start my-app"></label>
+    <label>Stop Command<input name="stop_command" placeholder="sudo systemctl stop my-app"></label>
+    <label>Restart Command<input name="restart_command" placeholder="sudo systemctl restart my-app"></label>
+    <button class="btn" type="submit">Add Local Service</button>
+  </form>
+</div>
+<div class="grid cols-2">
+{% for s in services %}
+  {% set st = status_map.get(s.id, {}) %}
+  <div class="card">
+    <h3>{{ s.name }}</h3>
+    <p>{{ s.description }}</p>
+    <p>Status: <span class="status {{ st.get('status','unknown') }}">{{ st.get('status','unknown') }}</span></p>
+    <p>URL: {% if s.local_url %}<a href="{{ s.local_url }}" target="_blank" rel="noreferrer">{{ s.local_url }}</a>{% else %}-{% endif %}</p>
+    <p>Last check: {{ st.get('checked_at','-') }}</p>
+    <div class="row gap">
+      {% if s.local_url %}<a class="btn btn-secondary" href="{{ s.local_url }}" target="_blank" rel="noreferrer">Open</a>{% endif %}
+      <form method="post" action="{{ url_for('main.local_service_action', project_id=s.id, action='start') }}"><button class="btn" type="submit">Start</button></form>
+      <form method="post" action="{{ url_for('main.local_service_action', project_id=s.id, action='stop') }}"><button class="btn btn-danger" type="submit">Stop</button></form>
+      <form method="post" action="{{ url_for('main.local_service_action', project_id=s.id, action='restart') }}"><button class="btn" type="submit">Restart</button></form>
+    </div>
+    <p><a href="{{ url_for('main.logs_project', project_id=s.id) }}">View logs</a></p>
+    <pre class="log-box">{{ log_snippets.get(s.id, 'No snippet available') }}</pre>
+  </div>
+{% endfor %}
+</div>
+{% endblock %}

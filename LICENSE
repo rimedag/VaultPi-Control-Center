@@ -1,0 +1,33 @@
+VaultPi Control Center — Source Available, Non-Commercial License
+Copyright (c) 2026 RPAi Solutions (https://rpai.rs)
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to use,
+run, and modify the Software for personal, non-commercial purposes, subject to
+the following conditions:
+
+1. Attribution
+   You may not remove, alter, or obscure any copyright notice, authorship
+   credit, or attribution in the Software, its documentation, or any
+   derivative work.
+
+2. Non-Commercial Use Only
+   You may not sell, sublicense, rent, lease, or otherwise commercially
+   distribute the Software or any substantial portion of it, whether modified
+   or unmodified, as a product or service.
+
+3. No Misrepresentation
+   You may not claim original authorship of this Software or represent it as
+   your own original work to others.
+
+4. Personal Modifications Welcome
+   You may modify the Software for your own personal or homelab use. Modified
+   versions must retain this license and may not be distributed commercially.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

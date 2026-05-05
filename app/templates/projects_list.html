@@ -1,0 +1,50 @@
+﻿{% extends "base.html" %}
+{% block title %} - Projects{% endblock %}
+{% block content %}
+<div class="row between">
+  <h2>Projects / Apps Registry</h2>
+  <a class="btn" href="{{ url_for('main.project_create') }}">New Project</a>
+</div>
+<div class="table-wrap desktop-only">
+<table>
+  <tr>
+    <th>Name</th><th>Type</th><th>Env</th><th>Status</th><th>Host</th><th>Links</th><th>Actions</th>
+  </tr>
+  {% for p in projects %}
+    {% set st = status_map.get(p.id, {}) %}
+    <tr>
+      <td><a href="{{ url_for('main.project_detail', project_id=p.id) }}">{{ p.name }}</a></td>
+      <td>{{ p.type }}</td>
+      <td>{{ p.environment }}</td>
+      <td><span class="status {{ st.get('status','unknown') }}">{{ st.get('status','unknown') }}</span></td>
+      <td>{{ p.host_machine or '-' }}</td>
+      <td>
+        {% if p.local_url %}<a href="{{ p.local_url }}" target="_blank" rel="noreferrer">local</a>{% endif %}
+        {% if p.remote_url %}<a href="{{ p.remote_url }}" target="_blank" rel="noreferrer">remote</a>{% endif %}
+        {% if p.repo_url %}<a href="{{ p.repo_url }}" target="_blank" rel="noreferrer">repo</a>{% endif %}
+      </td>
+      <td>
+        <a href="{{ url_for('main.project_edit', project_id=p.id) }}">edit</a>
+      </td>
+    </tr>
+  {% endfor %}
+</table>
+</div>
+<div class="mobile-card-list mobile-only">
+  {% for p in projects %}
+    {% set st = status_map.get(p.id, {}) %}
+    <div class="card compact-card">
+      <h3><a href="{{ url_for('main.project_detail', project_id=p.id) }}">{{ p.name }}</a></h3>
+      <p>{{ p.type }} · {{ p.environment }}</p>
+      <p>Status: <span class="status {{ st.get('status','unknown') }}">{{ st.get('status','unknown') }}</span></p>
+      <p>Host: {{ p.host_machine or '-' }}</p>
+      <p>
+        {% if p.local_url %}<a href="{{ p.local_url }}" target="_blank" rel="noreferrer">local</a>{% endif %}
+        {% if p.remote_url %}<a href="{{ p.remote_url }}" target="_blank" rel="noreferrer">remote</a>{% endif %}
+        {% if p.repo_url %}<a href="{{ p.repo_url }}" target="_blank" rel="noreferrer">repo</a>{% endif %}
+      </p>
+      <p><a href="{{ url_for('main.project_edit', project_id=p.id) }}">Edit</a></p>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %} - Edit {{ job.label }} Script{% endblock %}
+{% block content %}
+<h2>Edit Script: {{ job.label }}</h2>
+<p class="muted">Allowed path: <code>{{ job.script_path }}</code></p>
+<p class="muted">Editing operational scripts can break automation.</p>
+{% if job.key == "gitea-sync-android" %}
+  <p class="muted">Host, SSH port, SSH user, Android backup path, mirror path, and Android Gitea URL can be changed from Settings without editing this script.</p>
+{% endif %}
+<p>
+  <a class="btn btn-secondary" href="{{ url_for('main.actions') }}">Back to Quick Actions</a>
+  <a class="btn btn-secondary" href="{{ url_for('main.gitea_log', job_key=job.key) }}">View Log</a>
+  <a class="btn btn-secondary" href="{{ url_for('main.gitea_status', job_key=job.key) }}">View Status JSON</a>
+</p>
+
+{% if not script_exists %}
+  <div class="flash flash-error">Script does not exist yet. Saving will create it at this allowed path.</div>
+{% endif %}
+
+<form method="post">
+  <label for="script_content">Script content</label>
+  <textarea id="script_content" name="script_content" class="script-editor">{{ script_content }}</textarea>
+  <div class="row gap">
+    <span class="muted">A timestamped backup is automatically created before each save.</span>
+    <label><input type="checkbox" name="warning_ack" required> I understand script changes can break operations</label>
+  </div>
+  <div class="row gap">
+    <button class="btn" type="submit">Save Script</button>
+  </div>
+</form>
+
+{% if script_backups %}
+  <div class="card">
+    <h3>Recent Script Backups</h3>
+    {% for path in script_backups %}
+      <p><code>{{ path }}</code></p>
+    {% endfor %}
+  </div>
+{% endif %}
+{% endblock %}

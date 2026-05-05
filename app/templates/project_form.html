@@ -1,0 +1,39 @@
+﻿{% extends "base.html" %}
+{% block title %} - Project{% endblock %}
+{% block content %}
+{% if project %}<h2>Edit Project</h2>{% else %}<h2>Create Project</h2>{% endif %}
+<form method="post" class="form-grid">
+  <label>Name<input name="name" required value="{{ project.name if project else '' }}"></label>
+  <label>Slug<input name="slug" required value="{{ project.slug if project else '' }}"></label>
+  <label>Description<input name="description" value="{{ project.description if project else '' }}"></label>
+  <label>Category<input name="category" value="{{ project.category if project else '' }}"></label>
+  <label>Type<input name="type" value="{{ project.type if project else '' }}"></label>
+  <label>Environment<input name="environment" value="{{ project.environment if project else '' }}"></label>
+  <label>Stack<input name="stack" value="{{ project.stack if project else '' }}"></label>
+  <label>Repo URL<input name="repo_url" value="{{ project.repo_url if project else '' }}"></label>
+  <label>Local URL<input name="local_url" value="{{ project.local_url if project else '' }}"></label>
+  <label>Remote URL<input name="remote_url" value="{{ project.remote_url if project else '' }}"></label>
+  <label>Healthcheck URL<input name="healthcheck_url" value="{{ project.healthcheck_url if project else '' }}"></label>
+  <label>Host Machine<input name="host_machine" value="{{ project.host_machine if project else '' }}"></label>
+  <label>Port<input name="port" value="{{ project.port if project else '' }}"></label>
+  <label>Run Command<input name="run_command" value="{{ project.run_command if project else '' }}"></label>
+  <label>Stop Command<input name="stop_command" value="{{ project.stop_command if project else '' }}"></label>
+  <label>Restart Command<input name="restart_command" value="{{ project.restart_command if project else '' }}"></label>
+  <label>Log Path<input name="log_path" value="{{ project.log_path if project else '' }}"></label>
+  <label>Working Directory<input name="working_directory" value="{{ project.working_directory if project else '' }}"></label>
+  <label>Tags<input name="tags" value="{{ project.tags if project else '' }}"></label>
+  <label>Display Order<input name="display_order" value="{{ project.display_order if project else '100' }}"></label>
+  <label>Notes<textarea name="notes">{{ project.notes if project else '' }}</textarea></label>
+
+  <label><input type="checkbox" name="enabled" {% if project is none or project.enabled == 1 %}checked{% endif %}> Enabled</label>
+  <label><input type="checkbox" name="monitoring_enabled" {% if project is none or project.monitoring_enabled == 1 %}checked{% endif %}> Monitoring enabled</label>
+  <label><input type="checkbox" name="action_enabled" {% if project and project.action_enabled == 1 %}checked{% endif %}> Actions enabled</label>
+
+  <button class="btn" type="submit">Save</button>
+</form>
+{% if project %}
+<form method="post" action="{{ url_for('main.project_archive', project_id=project.id) }}">
+  <button type="submit" class="btn btn-danger">Archive Project</button>
+</form>
+{% endif %}
+{% endblock %}

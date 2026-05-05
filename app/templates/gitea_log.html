@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %} - {{ job.label }} Log{% endblock %}
+{% block content %}
+<h2>{{ job.label }} Log</h2>
+<p class="muted">File: <code>{{ job.log_path }}</code></p>
+<p>
+  <a class="btn btn-secondary" href="{{ url_for('main.actions') }}">Back to Quick Actions</a>
+  <a class="btn btn-secondary" href="{{ url_for('main.gitea_status', job_key=job.key) }}">View Status JSON</a>
+</p>
+{% if truncated %}
+  <div class="flash flash-error">Log output was truncated to the last ~2MB for browser safety.</div>
+{% endif %}
+<pre class="log-box">{{ content }}</pre>
+{% endblock %}

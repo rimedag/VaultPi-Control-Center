@@ -1,0 +1,53 @@
+﻿{% extends "base.html" %}
+{% block title %} - Remote Services{% endblock %}
+{% block content %}
+<div class="row between">
+  <h2>Remote Services</h2>
+  <a class="btn" href="{{ url_for('main.project_create', type='remote app', environment='prod', monitoring_enabled='1', action_enabled='0') }}">Detailed Add</a>
+</div>
+<div class="card">
+  <h3>Quick Add Website / Remote Service</h3>
+  <form class="form-grid" method="post" action="{{ url_for('main.remote_service_quick_add') }}">
+    <label>Name<input name="name" placeholder="mydomain.com" required></label>
+    <label>Remote URL<input name="remote_url" placeholder="https://mydomain.com" required></label>
+    <label>Healthcheck URL<input name="healthcheck_url" placeholder="https://mydomain.com/health"></label>
+    <label>Environment<input name="environment" value="prod"></label>
+    <button class="btn" type="submit">Add Remote Service</button>
+  </form>
+</div>
+<div class="table-wrap desktop-only">
+<table>
+  <tr><th>Name</th><th>URL</th><th>Health</th><th>Status</th><th>Code</th><th>Response</th><th>Last Check</th><th>Last Success</th><th>Last Failure</th></tr>
+  {% for s in services %}
+    {% set st = status_map.get(s.id, {}) %}
+    <tr>
+      <td>{{ s.name }}</td>
+      <td>{% if s.remote_url %}<a href="{{ s.remote_url }}" target="_blank" rel="noreferrer">{{ s.remote_url }}</a>{% else %}-{% endif %}</td>
+      <td>{{ s.healthcheck_url or '-' }}</td>
+      <td><span class="status {{ st.get('status','unknown') }}">{{ st.get('status','unknown') }}</span></td>
+      <td>{{ st.get('status_code','-') }}</td>
+      <td>{{ st.get('response_ms','-') }} ms</td>
+      <td>{{ st.get('checked_at','-') }}</td>
+      <td>{{ success_map.get(s.id, '-') }}</td>
+      <td>{{ failure_map.get(s.id, '-') }}</td>
+    </tr>
+  {% endfor %}
+</table>
+</div>
+<div class="mobile-card-list mobile-only">
+  {% for s in services %}
+    {% set st = status_map.get(s.id, {}) %}
+    <div class="card compact-card">
+      <h3>{{ s.name }}</h3>
+      <p>{% if s.remote_url %}<a href="{{ s.remote_url }}" target="_blank" rel="noreferrer">{{ s.remote_url }}</a>{% else %}-{% endif %}</p>
+      <p>Status: <span class="status {{ st.get('status','unknown') }}">{{ st.get('status','unknown') }}</span></p>
+      <p>Health: {{ s.healthcheck_url or '-' }}</p>
+      <p>Code: {{ st.get('status_code','-') }}</p>
+      <p>Response: {{ st.get('response_ms','-') }} ms</p>
+      <p>Last check: {{ st.get('checked_at','-') }}</p>
+      <p>Last success: {{ success_map.get(s.id, '-') }}</p>
+      <p>Last failure: {{ failure_map.get(s.id, '-') }}</p>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}
