@@ -1,5 +1,6 @@
 ﻿from __future__ import annotations
 
+import os
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -16,12 +17,17 @@ def run_command(command: str, timeout_sec: int = 30, working_directory: str = ""
     cwd = working_directory.strip() or None
     if cwd and not Path(cwd).exists():
         return CommandResult(2, "", f"Working directory does not exist: {cwd}")
+    app_root = Path(__file__).resolve().parents[2]
+    env = os.environ.copy()
+    existing_pythonpath = env.get("PYTHONPATH", "")
+    env["PYTHONPATH"] = f"{app_root}{os.pathsep}{existing_pythonpath}" if existing_pythonpath else str(app_root)
 
     try:
         process = subprocess.run(
             command,
             shell=True,
             cwd=cwd,
+            env=env,
             capture_output=True,
             text=True,
             timeout=timeout_sec,

@@ -30,6 +30,7 @@ from .services.gitea_ops import all_job_statuses, get_job, latest_local_backup_i
 from .services.logs import read_log_tail
 from .services.metrics import system_metrics
 from .services.monitor import HealthChecker
+from .services.terminal import terminal_manager
 from .services.wifi import apply_network_add, apply_network_remove, scan_nearby, tailscale_status
 from .services.web_browser import build_search_url, ensure_bookmarks, fetch_text, normalize_url, w3m_installed
 
@@ -1001,6 +1002,22 @@ def _cardputer_action_payload(row: Any) -> dict[str, Any]:
     }
 
 
+def _cardputer_output_lines(text: str, width: int = 80, limit: int = 100) -> list[str]:
+    lines: list[str] = []
+    for raw in (text or "").splitlines():
+        line = raw.rstrip()
+        if not line:
+            lines.append("")
+        while len(line) > width:
+            lines.append(line[:width])
+            line = line[width:]
+        if line:
+            lines.append(line)
+        if len(lines) >= limit:
+            break
+    return lines[:limit]
+
+
 @spa_api_bp.route("/api/cardputer/connect", methods=["GET", "POST"])
 def api_cardputer_connect() -> Response:
     if not _cardputer_authorized():
@@ -1110,7 +1127,15 @@ def api_v1_cardputer_service_action(project_id: int, action: str) -> Response:
     result = run_command(command, timeout_sec=30, working_directory=project["working_directory"] or "")
     ok = result.exit_code == 0
     log_event("cardputer_service_action", project_id, "cardputer", f"{action}: {project['name']}")
-    return jsonify({"ok": ok, "message": result.stdout.strip() or result.stderr.strip() or ("done" if ok else "failed")}), 200 if ok else 500
+    combined = (result.stdout + result.stderr).strip()
+    return jsonify(
+        {
+            "ok": ok,
+            "message": combined or ("done" if ok else "failed"),
+            "lines": _cardputer_output_lines(combined),
+            "exit_code": result.exit_code,
+        }
+    ), 200 if ok else 500
 
 
 @spa_api_bp.route("/api/v1/actions")
@@ -1140,6 +1165,22 @@ def api_v1_cardputer_action_run(action_id: str) -> Response:
         return auth_response
     if not is_command_execution_enabled():
         return jsonify({"ok": False, "error": "Command execution is disabled"}), 403
+    if action_id == "sys-shutdown":
+        command = get_db().execute("SELECT * FROM commands WHERE name = ? AND enabled = 1", ("Safe Shutdown Pi",)).fetchone()
+        if command:
+            result = run_command(command["command"], timeout_sec=int(command["timeout_sec"] or 10), working_directory=command["working_directory"] or "")
+        else:
+            result = run_command("sudo shutdown -h now", timeout_sec=10)
+        log_event("cardputer_shutdown", None, "cardputer", "System shutdown requested from Cardputer")
+        combined = (result.stdout + result.stderr).strip()
+        return jsonify(
+            {
+                "ok": result.exit_code == 0,
+                "message": "System is shutting down safely." if result.exit_code == 0 else (combined or "Shutdown command failed"),
+                "lines": _cardputer_output_lines(combined),
+                "exit_code": result.exit_code,
+            }
+        ), 200 if result.exit_code == 0 else 500
     if action_id.startswith("cmd-"):
         raw_id = action_id[4:]
         if not raw_id.isdigit():
@@ -1150,7 +1191,15 @@ def api_v1_cardputer_action_run(action_id: str) -> Response:
         result = run_command(command["command"], timeout_sec=int(command["timeout_sec"] or 30), working_directory=command["working_directory"] or "")
         ok = result.exit_code == 0
         log_event("cardputer_action", None, "cardputer", f"Executed: {command['name']}")
-        return jsonify({"ok": ok, "message": result.stdout.strip() or result.stderr.strip() or ("done" if ok else "failed")}), 200 if ok else 500
+        combined = (result.stdout + result.stderr).strip()
+        return jsonify(
+            {
+                "ok": ok,
+                "message": combined or ("done" if ok else "failed"),
+                "lines": _cardputer_output_lines(combined),
+                "exit_code": result.exit_code,
+            }
+        ), 200 if ok else 500
     if action_id.startswith("gitea-"):
         job = get_job(action_id[6:])
         if not job:
@@ -1251,12 +1300,50 @@ def api_v1_cardputer_terminal_exec() -> Response:
         return jsonify({"ok": False, "error": "no command"})
     result = run_command(cmd, timeout_sec=30)
     combined = (result.stdout + result.stderr).rstrip()
-    raw_lines = combined.split("\n") if combined else []
-    lines_out: list[str] = []
-    for ln in raw_lines[:100]:
-        ln = ln.rstrip()
-        while len(ln) > 80:
-            lines_out.append(ln[:80])
-            ln = ln[80:]
-        lines_out.append(ln)
-    return jsonify({"ok": True, "lines": lines_out[:100], "exit_code": result.exit_code})
+    return jsonify(
+        {
+            "ok": result.exit_code == 0,
+            "lines": _cardputer_output_lines(combined),
+            "exit_code": result.exit_code,
+            "error": "" if result.exit_code == 0 else (combined or "command failed"),
+        }
+    )
+
+
+@spa_api_bp.route("/api/v1/terminal/live/poll")
+def api_v1_cardputer_terminal_live_poll() -> Response:
+    if auth_response := _cardputer_require_auth():
+        return auth_response
+    raw_cursor = request.args.get("cursor", "0").strip()
+    cursor = int(raw_cursor) if raw_cursor.isdigit() else 0
+    snapshot = terminal_manager.read("cardputer", cursor=cursor)
+    return jsonify(
+        {
+            "ok": True,
+            "output": snapshot.output,
+            "lines": _cardputer_output_lines(snapshot.output),
+            "cursor": snapshot.cursor,
+            "alive": snapshot.alive,
+            "reset": snapshot.reset,
+        }
+    )
+
+
+@spa_api_bp.route("/api/v1/terminal/live/input", methods=["POST"])
+def api_v1_cardputer_terminal_live_input() -> Response:
+    if auth_response := _cardputer_require_auth():
+        return auth_response
+    payload = request.get_json(silent=True) or {}
+    data = str(payload.get("data", ""))
+    if len(data) > 2048:
+        data = data[:2048]
+    return jsonify({"ok": terminal_manager.write("cardputer", data)})
+
+
+@spa_api_bp.route("/api/v1/terminal/live/reset", methods=["POST"])
+def api_v1_cardputer_terminal_live_reset() -> Response:
+    if auth_response := _cardputer_require_auth():
+        return auth_response
+    terminal_manager.reset("cardputer")
+    log_event("cardputer_terminal_reset", None, "cardputer", "Reset Cardputer terminal session")
+    return jsonify({"ok": True})
