@@ -1,5 +1,8 @@
 ﻿# VaultPi Control Center
 
+<img width="1706" height="1257" alt="Screenshot 2026-05-13 200751" src="https://github.com/user-attachments/assets/08d40186-3317-47cb-af58-24ea49bd3e16" />
+
+
 Lightweight personal infrastructure dashboard for Raspberry Pi Zero 2 W.
 
 ## Stack
